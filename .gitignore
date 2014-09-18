@@ -26,3 +26,7 @@
 *.exe
 *.out
 *.app
+
+# Local settings
+*.suo
+*.sdf
