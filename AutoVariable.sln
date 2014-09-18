@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AutoVariable", "AutoVariable\AutoVariable.vcxproj", "{8D660EF7-F340-4388-80DC-C6750DCC053A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SerializationHelper", "SerializationHelper\SerializationHelper.vcxproj", "{710357B6-BF82-43BF-A24D-F38693A5D6AD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AutoVariableTests", "AutoVariableTests\AutoVariableTests.vcxproj", "{641278BA-52DC-4715-BB0E-BBC20C994CD5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{710357B6-BF82-43BF-A24D-F38693A5D6AD} = {710357B6-BF82-43BF-A24D-F38693A5D6AD}
+		{8D660EF7-F340-4388-80DC-C6750DCC053A} = {8D660EF7-F340-4388-80DC-C6750DCC053A}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8D660EF7-F340-4388-80DC-C6750DCC053A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8D660EF7-F340-4388-80DC-C6750DCC053A}.Debug|Win32.Build.0 = Debug|Win32
+		{8D660EF7-F340-4388-80DC-C6750DCC053A}.Release|Win32.ActiveCfg = Release|Win32
+		{8D660EF7-F340-4388-80DC-C6750DCC053A}.Release|Win32.Build.0 = Release|Win32
+		{710357B6-BF82-43BF-A24D-F38693A5D6AD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{710357B6-BF82-43BF-A24D-F38693A5D6AD}.Debug|Win32.Build.0 = Debug|Win32
+		{710357B6-BF82-43BF-A24D-F38693A5D6AD}.Release|Win32.ActiveCfg = Release|Win32
+		{710357B6-BF82-43BF-A24D-F38693A5D6AD}.Release|Win32.Build.0 = Release|Win32
+		{641278BA-52DC-4715-BB0E-BBC20C994CD5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{641278BA-52DC-4715-BB0E-BBC20C994CD5}.Debug|Win32.Build.0 = Debug|Win32
+		{641278BA-52DC-4715-BB0E-BBC20C994CD5}.Release|Win32.ActiveCfg = Release|Win32
+		{641278BA-52DC-4715-BB0E-BBC20C994CD5}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
