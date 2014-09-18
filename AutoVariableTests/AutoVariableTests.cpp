@@ -54,7 +54,7 @@ public:
 
 	void changeMap()
 	{
-		_mapTest[42] = 1;
+//		_mapTest[42] = 1;
 	}
 	const bool operator==(const VariableTest & rhs) const
 	{

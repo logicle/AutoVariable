@@ -122,7 +122,6 @@ template<typename KeyType, typename ValueType, typename NotificationTargetType>
 class AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType > : public AutoDeltaVariableBase
 {
 public:
-//	AutoDeltaVariable(AutoVariableContainer & container, NotificationTargetType & notificationTarget, void(NotificationTargetType::*onChange)(const VariableType & oldValue, const VariableType & newValue));
 	AutoDeltaVariable(AutoVariableContainer & container, NotificationTargetType & notificationTarget);
 	virtual ~AutoDeltaVariable();
 
@@ -130,5 +129,47 @@ public:
 	virtual void unpack(std::vector<unsigned char>::const_iterator & source);
 	virtual void packDelta(std::vector<unsigned char> & target) const;
 	virtual void unpackDelta(std::vector<unsigned char>::const_iterator & source);
+
+private:
+	NotificationTargetType & _notificationTarget;
+	std::map<KeyType, ValueType> _map;
 };
+
+template<typename KeyType, typename ValueType, typename NotificationTargetType>
+AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType>::AutoDeltaVariable(AutoVariableContainer & container, NotificationTargetType & notificationTarget) :
+AutoDeltaVariableBase(container)
+, _notificationTarget(notificationTarget)
+{
+
+}
+
+template<typename KeyType, typename ValueType, typename NotificationTargetType>
+AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType>::~AutoDeltaVariable()
+{
+
+}
+
+template<typename KeyType, typename ValueType, typename NotificationTargetType>
+void AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType>::pack(std::vector<unsigned char> & target) const
+{
+	target << _map;
+}
+
+template<typename KeyType, typename ValueType, typename NotificationTargetType>
+void AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType>::unpack(std::vector<unsigned char>::const_iterator & source)
+{
+	source >> _map;
+}
+
+template<typename KeyType, typename ValueType, typename NotificationTargetType>
+void AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType>::packDelta(std::vector<unsigned char> & target) const
+{
+	//todo
+}
+
+template<typename KeyType, typename ValueType, typename NotificationTargetType>
+void AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType>::unpackDelta(std::vector<unsigned char>::const_iterator & source)
+{
+	//todo
+}
 #endif//_INCLUDED_AutoDeltaVariable_H
