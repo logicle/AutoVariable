@@ -3,6 +3,49 @@
 
 #include "AutoDeltaVariable.h"
 
+#if 0 // attempting to write a recursive auto delta container, failing on map insert/move semantics
+template<typename KeyType, typename ValueType, typename NotificationTargetType>
+class AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType > : public AutoDeltaVariableBase
+{
+public:
+	typedef AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType > MapType;
+	typedef AutoDeltaVariable<ValueType, MapType> ElementType;
+
+	AutoDeltaVariable(AutoVariableContainer & container, NotificationTargetType & notificationTarget);
+
+	virtual void pack(std::vector<unsigned char> & target) const;
+	virtual void unpack(std::vector<unsigned char>::const_iterator & source);
+	virtual void packDelta(std::vector<unsigned char> & target) const;
+	virtual void unpackDelta(std::vector<unsigned char>::const_iterator & source);
+
+	void onInsertElement(const AutoDeltaVariable<ValueType, AutoDeltaVariable> & newType)
+	{
+	}
+
+	void onElementChanged(const ValueType & oldValue, const ValueType & ValueType)
+	{
+	}
+
+	ElementType & operator[](const KeyType & key)
+	{
+		&MapType::onElementChanged;
+		ElementType e(ValueType(), _container, *this, &MapType::onElementChanged);
+		std::map<KeyType, AutoDeltaVariable<ValueType, AutoDeltaVariable> >::const_iterator f = _map.find(key);
+		if (f == _map.end())
+			_map[key] = ElementType(ValueType(), _container, *this, &MapType::onElementChanged);
+		return _map[key];
+	}
+
+	const bool operator==(const AutoDeltaVariable & rhs) const
+	{
+		return _map == rhs._map;
+	}
+private:
+	AutoVariableContainer _container;
+	std::map < KeyType, ElementType> _map;
+};
+
+#else
 template<typename KeyType, typename ValueType, typename NotificationTargetType>
 class AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType > : public AutoDeltaVariableBase
 {
@@ -231,5 +274,6 @@ void AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType>::un
 		}
 	}
 }
+#endif//0
 
 #endif//_INCLUDED_AutoDeltaVariable_MapSpecialization_H
