@@ -37,6 +37,17 @@ public:
 	{
 		return _map == rhs._map;
 	}
+
+	typename std::map<KeyType, ValueType>::const_iterator end() const
+	{
+		return _map.end();
+	}
+
+	typename std::map<KeyType, ValueType>::const_iterator begin() const
+	{
+		return _map.begin();
+	}
+
 protected:
 	friend class WrappedElement;
 	class MapCommand
@@ -70,19 +81,9 @@ public:
 		WrappedElement(AutoDeltaVariable & owner, ValueType & target, MapCommand operation) :
 			_owner(owner)
 			, _target(target)
-			, _operation(operation)
-		{
+			, _operation(operation) {}
 
-		}
-
-		~WrappedElement()
-		{
-			if (_oldValue != _target)
-			{
-				_operation._value = _target;
-				_owner.addCommand(_operation);
-			}
-		}
+		~WrappedElement(){}
 
 		operator ValueType &()
 		{
@@ -94,6 +95,8 @@ public:
 			if (rhs != _oldValue)
 			{
 				_target = rhs;
+				_operation._value = _target;
+				_owner.addCommand(_operation);
 			}
 			return *this;
 		}
@@ -124,6 +127,11 @@ public:
 		return WrappedElement(*this, _map[key], MapCommand(operation, key, _map[key]));
 	}
 
+	const ValueType & operator[](const KeyType & key) const
+	{
+		return _map.at(key);
+	}
+
 	size_t erase(const KeyType & key)
 	{
 		size_t result = 0;
@@ -136,6 +144,11 @@ public:
 			result = _map.erase(key);
 		}
 		return result;
+	}
+
+	typename std::map<KeyType, ValueType>::const_iterator find(const KeyType & key) const
+	{
+		return _map.find(key);
 	}
 
 protected:

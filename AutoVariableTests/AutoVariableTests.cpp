@@ -53,12 +53,16 @@ public:
 		return _container;
 	}
 
-	void testMap()
+	void testMap() const
 	{
 		// conversion operator for a const map
 		const std::map<int, int> & b = _mapTest;
 		std::map<int, int>::const_iterator s = b.begin();
 
+		// const accessor
+		const int & i = _mapTest[2];
+		std::map<int, int>::const_iterator f = _mapTest.find(2);
+		bool end = (f == _mapTest.end());
 		// conversion operator for a copy of the map
 	}
 	void changeMap()
