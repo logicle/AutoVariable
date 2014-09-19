@@ -7,6 +7,11 @@ template<typename KeyType, typename ValueType, typename NotificationTargetType>
 class AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType > : public AutoDeltaVariableBase
 {
 public:
+	// the order of operations is important for
+	// maps. To push only sparse deltas, each
+	// operation is recorded at the source
+	// then played back when unpacking deltas on
+	// the target object
 	enum MapOperations
 	{
 		NONE
@@ -34,10 +39,10 @@ public:
 	}
 protected:
 	friend class WrappedElement;
-	class MapOperation
+	class MapCommand
 	{
 	public:
-		MapOperation(MapOperations operation, const KeyType & key, const ValueType & value) :
+		MapCommand(MapOperations operation, const KeyType & key, const ValueType & value) :
 			_operation(operation)
 			, _key(key)
 			, _value(value)
@@ -55,14 +60,14 @@ protected:
 
 		const MapOperations _operation;
 		const KeyType _key;
-		const ValueType & _value;
+		ValueType _value;
 	};
 
 public:
 	class WrappedElement
 	{
 	public:
-		WrappedElement(AutoDeltaVariable & owner, ValueType & target, MapOperation operation) :
+		WrappedElement(AutoDeltaVariable & owner, ValueType & target, MapCommand operation) :
 			_owner(owner)
 			, _target(target)
 			, _operation(operation)
@@ -73,7 +78,10 @@ public:
 		~WrappedElement()
 		{
 			if (_oldValue != _target)
+			{
+				_operation._value = _target;
 				_owner.addCommand(_operation);
+			}
 		}
 
 		operator ValueType &()
@@ -86,7 +94,6 @@ public:
 			if (rhs != _oldValue)
 			{
 				_target = rhs;
-//				_owner.addCommand(_operation);
 			}
 			return *this;
 		}
@@ -95,7 +102,7 @@ public:
 		AutoDeltaVariable & _owner;
 		ValueType _oldValue;
 		ValueType & _target;
-		MapOperation _operation;
+		MapCommand _operation;
 	};
 
 	WrappedElement operator[](const KeyType & key)
@@ -114,12 +121,26 @@ public:
 			operation = UPDATE;
 		}
 
-		return WrappedElement(*this, _map[key], MapOperation(operation, key, _map[key]));
+		return WrappedElement(*this, _map[key], MapCommand(operation, key, _map[key]));
+	}
+
+	size_t erase(const KeyType & key)
+	{
+		size_t result = 0;
+		auto f = _map.find(key);
+		if (f != _map.end())
+		{
+			ValueType value = f->second;
+			MapCommand operation(DELETE, key, value);
+			addCommand(operation);
+			result = _map.erase(key);
+		}
+		return result;
 	}
 
 protected:
 	friend class WrappedElement;
-	void addCommand(const MapOperation & newOperation)
+	void addCommand(const MapCommand & newOperation)
 	{
 		_deltaOperations.push_back(newOperation);
 		touch();
@@ -127,7 +148,7 @@ protected:
 private:
 	NotificationTargetType & _notificationTarget;
 	std::map<KeyType, ValueType> _map;
-	std::vector<MapOperation> _deltaOperations;
+	std::vector<MapCommand> _deltaOperations;
 };
 
 template<typename KeyType, typename ValueType, typename NotificationTargetType>
@@ -161,7 +182,7 @@ void AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType>::pa
 {
 	unsigned short count = _deltaOperations.size();
 	target << count;
-	for (MapOperation command : _deltaOperations)
+	for (MapCommand command : _deltaOperations)
 	{
 		command.writeTo(target);
 	}
@@ -178,7 +199,7 @@ void AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType>::un
 		const KeyType key(initializeFrom<KeyType>(source));
 		const ValueType value(initializeFrom<ValueType>(source));
 
-		MapOperation command(operation, key, value);
+		MapCommand command(operation, key, value);
 		switch (command._operation)
 		{
 		case CREATE:
