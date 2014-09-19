@@ -3,37 +3,114 @@
 
 #include "AutoDeltaVariable.h"
 
-#if 0 // attempting to write a recursive auto delta container, failing on map insert/move semantics
+#if 1 // attempting to write a recursive auto delta container, failing on map insert/move semantics
+
+template<typename ValueType, typename NotificationTargetType>
+class ChangeNotification
+{
+public:
+	ChangeNotification() : _container(0), _value(), _notificationTarget(0), _onChange(0) {}
+	ChangeNotification(const ValueType & source) : _container(0), _value(source), _notificationTarget(0), _onChange(0) {}
+	ChangeNotification(AutoVariableContainer & container, const ValueType & source) : _container(&container), _value(source), _notificationTarget(0), _onChange(0) {}
+	~ChangeNotification() {}
+
+	operator const ValueType &() const
+	{
+		return _value;
+	}
+
+	void setNotificationCallback(void(NotificationTargetType::*onChange)(/* MapCommand & */))
+	{
+		_onChange = onChange;
+	}
+
+	void setContainer(AutoVariableContainer & container)
+	{
+		_container = &container;
+	}
+
+	ChangeNotification & operator=(const ValueType & rhs)
+	{
+		if ((rhs != _value) && _onChange)
+		{
+			_value = rhs;
+			((_notificationTarget)->*(_onChange))();
+		}
+		return *this;
+	}
+
+	void readFrom(std::vector<unsigned char>::const_iterator & source)
+	{
+		ValueType oldValue = _value;
+		source >> _value;
+		if ((oldValue != _value) && _onChange)
+		{
+//			((_notificationTarget).*(_onChange))(oldValue, _value);
+		}
+	}
+
+	void writeTo(std::vector<unsigned char> & target) const
+	{
+		target << _value;
+	}
+
+private:
+	// this has to be a pointer to accomodate 
+	// default constructors invoked from std::map
+	AutoVariableContainer * _container;
+	ValueType _value;
+	NotificationTargetType * _notificationTarget;
+	void(NotificationTargetType::*_onChange)();
+};
+
+template<typename ValueType, typename NotificationTargetType>
+void writeTo(std::vector<unsigned char> & target, const ChangeNotification<ValueType, NotificationTargetType> & source)
+{
+	source.writeTo(target);
+}
+
+template<typename ValueType, typename NotificationTargetType>
+void readFrom(std::vector<unsigned char>::const_iterator & source, ChangeNotification<ValueType, NotificationTargetType> & target)
+{
+	target.readFrom(source);
+}
+
 template<typename KeyType, typename ValueType, typename NotificationTargetType>
 class AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType > : public AutoDeltaVariableBase
 {
 public:
 	typedef AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType > MapType;
-	typedef AutoDeltaVariable<ValueType, MapType> ElementType;
 
-	AutoDeltaVariable(AutoVariableContainer & container, NotificationTargetType & notificationTarget);
+	AutoDeltaVariable(AutoVariableContainer & container, NotificationTargetType & notificationTarget) : AutoDeltaVariableBase(container), _container(), _map() {}
 
-	virtual void pack(std::vector<unsigned char> & target) const;
-	virtual void unpack(std::vector<unsigned char>::const_iterator & source);
-	virtual void packDelta(std::vector<unsigned char> & target) const;
-	virtual void unpackDelta(std::vector<unsigned char>::const_iterator & source);
+	virtual void pack(std::vector<unsigned char> & target) const
+	{
+		target << _map;
+	}
 
-	void onInsertElement(const AutoDeltaVariable<ValueType, AutoDeltaVariable> & newType)
+	virtual void unpack(std::vector<unsigned char>::const_iterator & source)
+	{
+		source >> _map;
+	}
+
+	virtual void packDelta(std::vector<unsigned char> & target) const
 	{
 	}
 
-	void onElementChanged(const ValueType & oldValue, const ValueType & ValueType)
+	virtual void unpackDelta(std::vector<unsigned char>::const_iterator & source)
 	{
 	}
 
-	ElementType & operator[](const KeyType & key)
+
+	void onChanged()
 	{
-		&MapType::onElementChanged;
-		ElementType e(ValueType(), _container, *this, &MapType::onElementChanged);
-		std::map<KeyType, AutoDeltaVariable<ValueType, AutoDeltaVariable> >::const_iterator f = _map.find(key);
-		if (f == _map.end())
-			_map[key] = ElementType(ValueType(), _container, *this, &MapType::onElementChanged);
-		return _map[key];
+	}
+
+	ChangeNotification<ValueType, MapType> & operator[](const KeyType & key)
+	{
+		auto & result = _map[key];
+		result.setNotificationCallback(&MapType::onChanged);
+		return result;
 	}
 
 	const bool operator==(const AutoDeltaVariable & rhs) const
@@ -42,7 +119,7 @@ public:
 	}
 private:
 	AutoVariableContainer _container;
-	std::map < KeyType, ElementType> _map;
+	std::map < KeyType, ChangeNotification<ValueType, MapType> > _map;
 };
 
 #else

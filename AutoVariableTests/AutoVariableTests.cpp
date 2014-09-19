@@ -55,6 +55,7 @@ public:
 
 	void testMap() const
 	{
+		/*
 		// conversion operator for a const map
 		const std::map<int, int> & b = _mapTest;
 		std::map<int, int>::const_iterator s = b.begin();
@@ -64,14 +65,16 @@ public:
 		std::map<int, int>::const_iterator f = _mapTest.find(2);
 		bool end = (f == _mapTest.end());
 		// conversion operator for a copy of the map
+		*/
 	}
 	void changeMap()
 	{
-		_mapTest[42] = 1;
+/*		_mapTest[42] = 1;
 		_mapTest[10] = 20;
 		_mapTest[11] = 21;
 		_mapTest[12] = 22;
 		_mapTest.erase(11);
+*/
 	}
 	const bool operator==(const VariableTest & rhs) const
 	{
