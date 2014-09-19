@@ -1,5 +1,6 @@
 #include <map>
 #include "AutoDeltaVariable.h"
+#include "AutoDeltaVariable_MapSpecialization.h"
 #include "AutoVariableContainer.h"
 #include "SerializationHelperContainers.h"
 
@@ -12,7 +13,7 @@ public:
 		, _stringTest("", _container, *this, &VariableTest::onStringTestChanged)
 		, _mapTest(_container, *this)
 	{
-
+		_mapTest[2] = 2;
 	}
 
 	~VariableTest() {}
@@ -52,14 +53,23 @@ public:
 		return _container;
 	}
 
+	void testMap()
+	{
+		// conversion operator for a const map
+		const std::map<int, int> & b = _mapTest;
+		std::map<int, int>::const_iterator s = b.begin();
+
+		// conversion operator for a copy of the map
+	}
 	void changeMap()
 	{
-//		_mapTest[42] = 1;
+		_mapTest[42] = 1;
 	}
 	const bool operator==(const VariableTest & rhs) const
 	{
 		return (rhs._intTest == _intTest &&
-			rhs._stringTest == _stringTest);
+			rhs._stringTest == _stringTest && 
+			rhs._mapTest == _mapTest);
 	}
 private:
 	AutoVariableContainer _container;
@@ -81,5 +91,11 @@ int main(int, char **)
 
 	if (!(v1 == v2)) return -1;
 
+	v2.testMap();
+	v2.changeMap();
+	ar1.clear();
+	v2.getContainer().packDeltas(ar1);
+	v1.getContainer().unpackDeltas(ar1.begin());
+	if (!(v1 == v2)) return -1;
 	return 0;
 }

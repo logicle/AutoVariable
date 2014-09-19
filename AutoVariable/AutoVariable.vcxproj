@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutoDeltaVariable.h" />
+    <ClInclude Include="AutoDeltaVariable_MapSpecialization.h" />
     <ClInclude Include="AutoVariableContainer.h" />
   </ItemGroup>
   <ItemGroup>

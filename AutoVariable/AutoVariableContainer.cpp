@@ -73,7 +73,7 @@ void AutoVariableContainer::unpackDeltas(std::vector<unsigned char>::const_itera
 	for (i = 0; i < count; ++i)
 	{
 		unsigned short index(initializeFrom<unsigned short>(source));
-		AutoDeltaVariableBase * variable = _variables[i];
+		AutoDeltaVariableBase * variable = _variables[index];
 		variable->unpackDelta(source);
 	}
 }
