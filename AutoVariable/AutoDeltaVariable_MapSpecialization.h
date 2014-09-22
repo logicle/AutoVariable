@@ -5,23 +5,54 @@
 
 #if 1 // attempting to write a recursive auto delta container, failing on map insert/move semantics
 
-template<typename ValueType, typename NotificationTargetType>
-class ChangeNotification
+enum MapOperations
+{
+	NONE
+	, UPDATE
+	, ERASE
+	, CLEAR
+};
+
+template<typename KeyType, typename ValueType, typename NotificationTargetType>
+class MapChangeNotification
 {
 public:
-	ChangeNotification() : _container(0), _value(), _notificationTarget(0), _onChange(0) {}
-	ChangeNotification(const ValueType & source) : _container(0), _value(source), _notificationTarget(0), _onChange(0) {}
-	ChangeNotification(AutoVariableContainer & container, const ValueType & source) : _container(&container), _value(source), _notificationTarget(0), _onChange(0) {}
-	~ChangeNotification() {}
+	typedef void(NotificationTargetType::*MapCommand)(const MapChangeNotification<KeyType, ValueType, NotificationTargetType> &);
+
+	MapChangeNotification() : _container(0), _key(), _value(), _notificationTarget(0), _onChange(0), _operation(NONE) {}
+	MapChangeNotification(const ValueType & source) : _container(0), _key(), _value(source), _notificationTarget(0), _onChange(0), _operation(NONE) {}
+	MapChangeNotification(AutoVariableContainer & container, const KeyType & key, const ValueType & source, NotificationTargetType & notificationTarget, MapCommand onChanged, MapOperations operation) : 
+		_container(&container)
+		, _key(key)
+		, _value(source)
+		, _notificationTarget(&notificationTarget)
+		, _onChange(onChange)
+		, _operation(operation)
+	{
+	}
+	
+	MapChangeNotification(const MapChangeNotification & source) :
+		_container(source._container)
+		, _key(source._key)
+		, _value(source._value)
+		, _notificationTarget(source._notificationTarget)
+		, _onChange(source._onChange)
+		, _operation(source._operation)
+	{
+
+	}
+
+	~MapChangeNotification() {}
 
 	operator const ValueType &() const
 	{
 		return _value;
 	}
 
-	void setNotificationCallback(void(NotificationTargetType::*onChange)(/* MapCommand & */))
+	void setNotificationCallback(NotificationTargetType & notificationTarget, MapCommand onChange)
 	{
 		_onChange = onChange;
+		_notificationTarget = &notificationTarget;
 	}
 
 	void setContainer(AutoVariableContainer & container)
@@ -29,12 +60,22 @@ public:
 		_container = &container;
 	}
 
-	ChangeNotification & operator=(const ValueType & rhs)
+	void setKey(const KeyType & key)
 	{
-		if ((rhs != _value) && _onChange)
+		_key = key;
+	}
+
+	void setOperation(MapOperations operation)
+	{
+		_operation = operation;
+	}
+
+	MapChangeNotification & operator=(const ValueType & rhs)
+	{
+		if ((rhs != _value) && _onChange && _notificationTarget)
 		{
 			_value = rhs;
-			((_notificationTarget)->*(_onChange))();
+			((_notificationTarget)->*(_onChange))(*this);
 		}
 		return *this;
 	}
@@ -58,19 +99,21 @@ private:
 	// this has to be a pointer to accomodate 
 	// default constructors invoked from std::map
 	AutoVariableContainer * _container;
+	KeyType _key;
 	ValueType _value;
 	NotificationTargetType * _notificationTarget;
-	void(NotificationTargetType::*_onChange)();
+	MapCommand _onChange;
+	MapOperations _operation;
 };
 
-template<typename ValueType, typename NotificationTargetType>
-void writeTo(std::vector<unsigned char> & target, const ChangeNotification<ValueType, NotificationTargetType> & source)
+template<typename KeyType, typename ValueType, typename NotificationTargetType>
+void writeTo(std::vector<unsigned char> & target, const MapChangeNotification<KeyType, ValueType, NotificationTargetType> & source)
 {
 	source.writeTo(target);
 }
 
-template<typename ValueType, typename NotificationTargetType>
-void readFrom(std::vector<unsigned char>::const_iterator & source, ChangeNotification<ValueType, NotificationTargetType> & target)
+template<typename KeyType, typename ValueType, typename NotificationTargetType>
+void readFrom(std::vector<unsigned char>::const_iterator & source, MapChangeNotification<KeyType, ValueType, NotificationTargetType> & target)
 {
 	target.readFrom(source);
 }
@@ -81,7 +124,13 @@ class AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType > :
 public:
 	typedef AutoDeltaVariable<std::map<KeyType, ValueType>, NotificationTargetType > MapType;
 
-	AutoDeltaVariable(AutoVariableContainer & container, NotificationTargetType & notificationTarget) : AutoDeltaVariableBase(container), _container(), _map() {}
+	AutoDeltaVariable(AutoVariableContainer & container, NotificationTargetType & notificationTarget) : 
+		AutoDeltaVariableBase(container)
+		, _container()
+		, _map()
+		, _changes()
+	{
+	}
 
 	virtual void pack(std::vector<unsigned char> & target) const
 	{
@@ -102,14 +151,17 @@ public:
 	}
 
 
-	void onChanged()
+	void onChanged(const MapChangeNotification<KeyType, ValueType, MapType> & source)
 	{
+		_changes.push_back(source);
 	}
 
-	ChangeNotification<ValueType, MapType> & operator[](const KeyType & key)
+	MapChangeNotification<KeyType, ValueType, MapType> & operator[](const KeyType & key)
 	{
 		auto & result = _map[key];
-		result.setNotificationCallback(&MapType::onChanged);
+		result.setNotificationCallback(*this, &MapType::onChanged);
+		result.setKey(key);
+		result.setOperation(UPDATE);
 		return result;
 	}
 
@@ -119,7 +171,8 @@ public:
 	}
 private:
 	AutoVariableContainer _container;
-	std::map < KeyType, ChangeNotification<ValueType, MapType> > _map;
+	std::map < KeyType, MapChangeNotification<KeyType, ValueType, MapType> > _map;
+	std::vector<MapChangeNotification<KeyType, ValueType, MapType> > _changes;
 };
 
 #else
