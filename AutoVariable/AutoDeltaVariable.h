@@ -78,6 +78,8 @@ void AutoDeltaVariable<VariableType, NotificationTargetType>::pack(std::vector<u
 template<typename VariableType, typename NotificationTargetType>
 void AutoDeltaVariable<VariableType, NotificationTargetType>::unpack(std::vector<unsigned char>::const_iterator & source)
 {
+	// todo : be sure to call onChange for this operation!
+	#error here
 	source >> _variable;
 }
 
