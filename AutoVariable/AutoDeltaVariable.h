@@ -50,6 +50,9 @@ public:
 		return rhs._variable == _variable;
 	}
 
+protected:
+	void notify(const VariableType & oldValue);
+
 private:
 	AutoDeltaVariable(const AutoDeltaVariable &);
 
@@ -76,24 +79,8 @@ void AutoDeltaVariable<VariableType, NotificationTargetType>::pack(std::vector<u
 }
 
 template<typename VariableType, typename NotificationTargetType>
-void AutoDeltaVariable<VariableType, NotificationTargetType>::unpack(std::vector<unsigned char>::const_iterator & source)
+void AutoDeltaVariable<VariableType, NotificationTargetType>::notify(const VariableType & oldValue)
 {
-	// todo : be sure to call onChange for this operation!
-	#error here
-	source >> _variable;
-}
-
-template<typename VariableType, typename NotificationTargetType>
-void AutoDeltaVariable<VariableType, NotificationTargetType>::packDelta(std::vector<unsigned char> & target) const
-{
-	target << _variable;
-}
-
-template<typename VariableType, typename NotificationTargetType>
-void AutoDeltaVariable<VariableType, NotificationTargetType>::unpackDelta(std::vector<unsigned char>::const_iterator & source)
-{
-	VariableType oldValue = _variable;
-	source >> _variable;
 	if (_variable != oldValue)
 	{
 		if (_onChange)
@@ -104,17 +91,33 @@ void AutoDeltaVariable<VariableType, NotificationTargetType>::unpackDelta(std::v
 }
 
 template<typename VariableType, typename NotificationTargetType>
+void AutoDeltaVariable<VariableType, NotificationTargetType>::unpack(std::vector<unsigned char>::const_iterator & source)
+{
+	const VariableType oldValue = _variable;
+	source >> _variable;
+	notify(oldValue);
+}
+
+template<typename VariableType, typename NotificationTargetType>
+void AutoDeltaVariable<VariableType, NotificationTargetType>::packDelta(std::vector<unsigned char> & target) const
+{
+	pack(target);
+}
+
+template<typename VariableType, typename NotificationTargetType>
+void AutoDeltaVariable<VariableType, NotificationTargetType>::unpackDelta(std::vector<unsigned char>::const_iterator & source)
+{
+	unpack(source);
+}
+
+template<typename VariableType, typename NotificationTargetType>
 AutoDeltaVariable<VariableType, NotificationTargetType> & AutoDeltaVariable<VariableType, NotificationTargetType>::operator=(const VariableType & rhs)
 {
 	if (_variable != rhs)
 	{
 		VariableType oldValue = _variable;
 		_variable = rhs;
-		if (_onChange)
-		{
-			((_notificationTarget).*(_onChange))(oldValue, _variable);
-		}
-		
+		notify(oldValue);
 		touch();
 	}
 	return *this;
