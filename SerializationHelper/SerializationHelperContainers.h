@@ -12,7 +12,7 @@ void writeSequenceTo(std::vector<unsigned char> & target, const SequenceType & s
 	const size_t length = source.size();
 	target << length;
 
-	for (auto e : source)
+	for (const auto & e : source)
 	{
 		target << e;
 	}

@@ -36,6 +36,7 @@ class AutoDeltaVariable : public AutoDeltaVariableBase
 {
 public:
 	AutoDeltaVariable(const VariableType & initialValue, AutoVariableContainer & container, NotificationTargetType & notificationTarget, void(NotificationTargetType::*onChange)(const VariableType & oldValue, const VariableType & newValue));
+	AutoDeltaVariable(const AutoDeltaVariable && rhs);
 	virtual ~AutoDeltaVariable() {}
 
 	void pack(std::vector<unsigned char> & target) const;
@@ -45,6 +46,12 @@ public:
 	void unpackDelta(std::vector<unsigned char>::const_iterator & source);
 	
 	AutoDeltaVariable & operator=(const VariableType & newValue);
+
+	operator const VariableType & () const
+	{
+		return _variable;
+	}
+
 	const bool operator==(const AutoDeltaVariable & rhs) const
 	{
 		return rhs._variable == _variable;

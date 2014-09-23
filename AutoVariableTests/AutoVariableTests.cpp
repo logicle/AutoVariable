@@ -1,8 +1,10 @@
 #include <map>
+#include <vector>
 #include "AutoDeltaVariable.h"
-#include "AutoDeltaVariable_MapSpecialization.h"
 #include "AutoVariableContainer.h"
 #include "SerializationHelperContainers.h"
+#include "AutoDeltaVariable_MapSpecialization.h"
+#include "AutoDeltaVariable_VectorSpecialization.h"
 
 class VariableTest
 {
@@ -12,8 +14,13 @@ public:
 		, _intTest(0, _container, *this, &VariableTest::onIntTestChanged)
 		, _stringTest("", _container, *this, &VariableTest::onStringTestChanged)
 		, _mapTest(_container, *this)
+		, _vectorTest(_container, *this)
+		, _vectorRecursionTest(_container, *this)
 	{
 		_mapTest[2] = 2;
+		std::vector<int> v;
+		v.push_back(1);
+		_vectorRecursionTest.push_back(v);
 	}
 
 	~VariableTest() {}
@@ -53,6 +60,11 @@ public:
 		return _container;
 	}
 
+	void onVectorRecursionTestChanged(/* const VectorChangeNotification<> & */)
+	{
+
+	}
+
 	void testMap() const
 	{
 		/*
@@ -87,6 +99,8 @@ private:
 	AutoDeltaVariable<int, VariableTest> _intTest;
 	AutoDeltaVariable<std::string, VariableTest> _stringTest;
 	AutoDeltaVariable<std::map<int, int>, VariableTest> _mapTest;
+	AutoDeltaVariable<std::vector<int>, VariableTest> _vectorTest;
+	AutoDeltaVariable<std::vector<std::vector<int> >, VariableTest > _vectorRecursionTest;
 };
 
 int main(int, char **)
